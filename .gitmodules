@@ -1,6 +1,3 @@
-[submodule "Time/Vendor/assimp"]
-	path = Time/Vendor/assimp
-	url = https://github.com/assimp/assimp.git
 [submodule "Time/Vendor/glad"]
 	path = Time/Vendor/glad
 	url = https://github.com/Dav1dde/glad.git
