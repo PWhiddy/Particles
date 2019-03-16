@@ -13,6 +13,3 @@
 [submodule "Time/Vendor/stb"]
 	path = Time/Vendor/stb
 	url = https://github.com/nothings/stb.git
-[submodule "Time/Vendor/bullet"]
-	path = Time/Vendor/bullet
-	url = https://github.com/bulletphysics/bullet3.git
