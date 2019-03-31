@@ -29,7 +29,7 @@ namespace rme
 		Particle *parts;
 		float *vertices;
 		float partSize = 0.02;
-		int particleCount = 2000;
+		int particleCount = 700;
 		int trianglesPerPart = 1;
 		int dimsPerVert = 3;
 		int vertsPerTriangle = 3;
@@ -41,7 +41,12 @@ namespace rme
 		void getObject3DLocation(shaderObject3D *obj, std::string id);
 		void updateUniforms(Scene* scene, Camera* camera);
 		void updateObject3D(shaderObject3D location, Object3D *obj);
+		void particlePhysics();
+		void chainPhysics();
 		void convertPartsToTriangles();
+		void printParticles();
+		void printPartBuff();
+		void moveParts();
 	public:
 		RaymarchRenderer(int w, int h);
 		~RaymarchRenderer();
@@ -51,7 +56,6 @@ namespace rme
 		void resize(int x, int y);
 		void render(Scene* scene, Camera* camera);
 	};
-
 
 	void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 

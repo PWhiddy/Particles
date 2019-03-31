@@ -100,18 +100,18 @@ namespace rme
 		glDeleteShader(vertexShader);
 		glDeleteShader(fragmentShader);
 
-		Particle party[particleCount];
-		
+		//Particle party[particleCount];
+		parts = new Particle[particleCount]; //party;
 		for (int i=0; i<particleCount; i++) {
 			float fi = 2.0*3.14159*static_cast<float>(i)/static_cast<float>(particleCount);
-			party[i].position.x = 0.65*cosf(12.0*fi);
-			party[i].position.y = 0.65*sinf(13.0*fi);
-			party[i].position.z = 0.05;
-			party[i].velocity.x = 0.01;
-			party[i].velocity.y = 0.0;
-			party[i].velocity.z = 0.0;
+			parts[i].position.x = 1.55*cosf(5.0*fi);
+			parts[i].position.y = 1.55*sinf(7.0*fi);
+			parts[i].position.z = 0.1;//0.3;
+			parts[i].velocity.x = 0.0;
+			parts[i].velocity.y = 0.0;
+			parts[i].velocity.z = 0.0;
 		}
-		parts = party;
+		//printParticles();
 
 		// Set up vertex data (and buffer(s)) and attribute pointers
 		vertices = new float[arrSize];
@@ -189,16 +189,22 @@ namespace rme
 
 		//objectLocations = new shaderObject3D[MAX_OBJECTS];
 
-
 		glfwSetTime(0.0);
 
+	}
+
+	void RaymarchRenderer::moveParts()
+	{
+		for (int i=0; i<particleCount; i++) {
+			parts[i].position += /*0.002f*/parts[i].velocity;
+		}
 	}
 
 	void RaymarchRenderer::convertPartsToTriangles()
 	{
 		for(int i=0; i<particleCount; i++) {
 			for (int t=0; t<trianglesPerPart; t++) {
-				int partIdx = i*dimsPerVert*vertsPerTriangle*trianglesPerPart + t*dimsPerVert*vertsPerTriangle;
+				int partIdx = i*9;//dimsPerVert*vertsPerTriangle*trianglesPerPart;// + t*dimsPerVert*vertsPerTriangle;
 				Particle p = parts[i];
 
 				vertices[partIdx+0] = p.position.x;
@@ -216,6 +222,54 @@ namespace rme
 		}
 	}
 
+	void RaymarchRenderer::printParticles()
+	{
+		for (int i=0; i<particleCount; i++) {
+			std::cout << " x: " << parts[i].position.x;
+			std::cout << " y: " << parts[i].position.y;
+			std::cout << " z: " << parts[i].position.z;
+			std::cout << "\n";
+		}
+	}
+
+	void RaymarchRenderer::printPartBuff()
+	{
+
+	}
+
+	void RaymarchRenderer::particlePhysics()
+	{
+		for (int i=0; i<particleCount-1; i++) {
+			Particle a = parts[i];
+			for (int j=i+1; j<particleCount; j++) {
+				Particle b = parts[j];
+				glm::vec3 diff = a.position - b.position;
+				float mag = glm::length(diff);
+				diff *= 0.000002/(mag*mag*mag+2.0);
+				a.velocity -= diff;
+				b.velocity += diff;
+				parts[j] = b;
+			}
+			parts[i] = a;
+		}
+	}
+
+	void RaymarchRenderer::chainPhysics()
+	{
+		for (int i=0; i<particleCount-1; i++) {
+			Particle a = parts[i];
+			for (int j=i+1; j<particleCount; j++) {
+				Particle b = parts[j];
+				glm::vec3 diff = a.position - b.position;
+				float mag = glm::length(diff);
+				diff *= 0.000002/(mag*mag*mag+2.0);
+				a.velocity -= diff;
+				b.velocity += diff;
+				parts[j] = b;
+			}
+			parts[i] = a;
+		}
+	}
 
 	void RaymarchRenderer::render(Scene* scene, Camera* camera)
 	{
@@ -229,6 +283,9 @@ namespace rme
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// Update uniforms with Scene
+		particlePhysics();
+		moveParts();
+		convertPartsToTriangles();
 
 		updateUniforms(scene, camera);
 
@@ -249,7 +306,7 @@ namespace rme
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*arrSize, &vertices[0], GL_DYNAMIC_DRAW);
 		//glUseProgram(shaderProgram);
 		//glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, particleCount*3);
+		glDrawArrays(GL_TRIANGLES, 0, 3*particleCount*trianglesPerPart);
 		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		//glDrawElements(GL_POINTS, 3, GL_UNSIGNED_INT, 0);
 		//glBindVertexArray(0);
