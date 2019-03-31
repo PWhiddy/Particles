@@ -41,7 +41,7 @@ int main()
 		
 	//	s1->position.z += 0.002;
 
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i < 1; i++)
 		{
 			scene->update(renderer->getControl());
 		}

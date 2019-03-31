@@ -100,30 +100,63 @@ namespace rme
 		glDeleteShader(vertexShader);
 		glDeleteShader(fragmentShader);
 
+		Particle party[particleCount];
+		
+		for (int i=0; i<particleCount; i++) {
+			float fi = 2.0*3.14159*static_cast<float>(i)/static_cast<float>(particleCount);
+			party[i].position.x = 0.65*cosf(12.0*fi);
+			party[i].position.y = 0.65*sinf(13.0*fi);
+			party[i].position.z = 0.05;
+			party[i].velocity.x = 0.01;
+			party[i].velocity.y = 0.0;
+			party[i].velocity.z = 0.0;
+		}
+		parts = party;
 
 		// Set up vertex data (and buffer(s)) and attribute pointers
-		GLfloat vertices[] = {
+		vertices = new float[arrSize];
+		convertPartsToTriangles();
+		/*
+		for (int i=0; i<particleCount; i++) {
+			int idx = i*3;
+			float fi = 2.0*3.14159*static_cast<float>(i)/static_cast<float>(particleCount);
+			vertices[idx+0] = cosf(fi);
+			vertices[idx+1] = sinf(fi);
+			vertices[idx+2] = 0.0f;
+		}
+		*/
+		/*
+		{
+			/*
 			1.0f, 1.0f, 0.0f,  // Top Right
 			1.0f, -1.0f, 0.0f,  // Bottom Right
 			-1.0f, -1.0f, 0.0f,  // Bottom Left
 			-1.0f, 1.0f, 0.0f   // Top Left 
+			* /
+			0.5f, 0.9f, 0.0f,  // Top Right
+			0.1f, 0.4f, 0.0f,  // Bottom Right
+			0.8f, 0.0f, 0.0f  // Bottom Left
+		//	0.3f, 0.7f, 0.0f   // Top Left 
 		};
+		*/
+		/*
 		GLuint indices[] = {  // Note that we start from 0!
 			0, 1, 3,  // First Triangle
-			1, 2, 3   // Second Triangle
+		//	1, 2, 3   // Second Triangle
 		};
+		*/
 		//GLuint VBO, VAO, EBO;
 		glGenVertexArrays(1, &VAO);
 		glGenBuffers(1, &VBO);
-		glGenBuffers(1, &EBO);
+		//glGenBuffers(1, &EBO);
 		// Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
 		glBindVertexArray(VAO);
 
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		//glBufferData(GL_ARRAY_BUFFER, sizeof(float)*arrSize, &vertices[0], GL_DYNAMIC_DRAW);
 
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(0);
@@ -131,57 +164,58 @@ namespace rme
 		glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to 
 		// glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
 
-		glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any 
+		//glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any 
 		// buffer/array to prevent strange bugs), remember: do NOT unbind the EBO, keep it bound to this VAO
 
 		glUseProgram(shaderProgram);
 
 		timeLocation = glGetUniformLocation(shaderProgram, "time");
 		resolutionLocation = glGetUniformLocation(shaderProgram, "resolution");
-		objCountLocation = glGetUniformLocation(shaderProgram, "objectCount");
+		//objCountLocation = glGetUniformLocation(shaderProgram, "objectCount");
 		rotationLocation = glGetUniformLocation(shaderProgram, "cameraRotation");
 		camPosLocation = glGetUniformLocation(shaderProgram, "cameraPos");
-		warpCountLoc = glGetUniformLocation(shaderProgram, "warpCount");
+		//warpCountLoc = glGetUniformLocation(shaderProgram, "warpCount");
 
-		glUniform1i(warpCountLoc, 0);
+		//glUniform1i(warpCountLoc, 0);
 
 		glUniform2f(resolutionLocation, (GLfloat)width, (GLfloat)height);
 
-		glUniform1i(objCountLocation, 0);
+		//glUniform1i(objCountLocation, 0);
 
 		glUniform2f(rotationLocation, 0.0, 0.0);
 
-		getObject3DLocation(&warpALoc, "warpA");
-		getObject3DLocation(&warpBLoc, "warpB");
+		//getObject3DLocation(&warpALoc, "warpA");
+		//getObject3DLocation(&warpBLoc, "warpB");
 
-		objectLocations = new shaderObject3D[MAX_OBJECTS];
+		//objectLocations = new shaderObject3D[MAX_OBJECTS];
 
-		for (int i = 0; i < MAX_OBJECTS; i++)
-		{
-			shaderObject3D *current = &objectLocations[i];
-			getObject3DLocation(current, ("objects[" + std::to_string(i) + "]"));
-		}
 
 		glfwSetTime(0.0);
 
 	}
 
-	void RaymarchRenderer::getObject3DLocation(shaderObject3D *obj, std::string id)
+	void RaymarchRenderer::convertPartsToTriangles()
 	{
+		for(int i=0; i<particleCount; i++) {
+			for (int t=0; t<trianglesPerPart; t++) {
+				int partIdx = i*dimsPerVert*vertsPerTriangle*trianglesPerPart + t*dimsPerVert*vertsPerTriangle;
+				Particle p = parts[i];
 
-		obj->color = glGetUniformLocation(shaderProgram, (id + ".color").c_str());
-		obj->position = glGetUniformLocation(shaderProgram, (id + ".position").c_str());
-		obj->direction = glGetUniformLocation(shaderProgram, (id + ".direction").c_str());
-		obj->radius = glGetUniformLocation(shaderProgram, (id + ".radius").c_str());
-		obj->age = glGetUniformLocation(shaderProgram, (id + ".age").c_str());
-		obj->shape = glGetUniformLocation(shaderProgram, (id + ".shape").c_str());
-		obj->geometry = glGetUniformLocation(shaderProgram, (id + ".geometry").c_str());
-		obj->mass = glGetUniformLocation(shaderProgram, (id + ".mass").c_str());
-		//obj.shininess = glGetUniformLocation(shaderProgram, (id + ".shiniess").c_str());
-		//obj.luminance = glGetUniformLocation(shaderProgram, (id + ".luminance").c_str());
+				vertices[partIdx+0] = p.position.x;
+				vertices[partIdx+1] = p.position.y+partSize;
+				vertices[partIdx+2] = p.position.z;
 
-		//obj.shading = glGetUniformLocation(shaderProgram, (id + ".shading").c_str());
+				vertices[partIdx+3] = p.position.x-partSize;
+				vertices[partIdx+4] = p.position.y;
+				vertices[partIdx+5] = p.position.z;
+
+				vertices[partIdx+6] = p.position.x+partSize;
+				vertices[partIdx+7] = p.position.y;
+				vertices[partIdx+8] = p.position.z;
+			}
+		}
 	}
+
 
 	void RaymarchRenderer::render(Scene* scene, Camera* camera)
 	{
@@ -198,13 +232,27 @@ namespace rme
 
 		updateUniforms(scene, camera);
 
-		glUniform1f(timeLocation, float(glfwGetTime()));
+		float t = 0.0f;//float(glfwGetTime());
+		/*
+		vertices[0] = sinf(t);
+		vertices[1] = cosf(t);
+		vertices[2] = sinf(2.0f*t);
+		vertices[3] = sinf(3.0*t);
+		vertices[4] = cosf(3.0*t);
+		vertices[5] = sinf(2.5f*t);
+		vertices[6] = sinf(1.2*t);
+		vertices[7] = cosf(1.4*t);
+		vertices[8] = sinf(0.5f*t);
+		*/
 
-		glUseProgram(shaderProgram);
-		glBindVertexArray(VAO);
-		//	glDrawArrays(GL_TRIANGLES, 0, 6);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*arrSize, &vertices[0], GL_DYNAMIC_DRAW);
+		//glUseProgram(shaderProgram);
+		//glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, particleCount*3);
+		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		//glDrawElements(GL_POINTS, 3, GL_UNSIGNED_INT, 0);
+		//glBindVertexArray(0);
 
 		// Swap the screen buffers
 		glfwSwapBuffers(window);
@@ -213,46 +261,12 @@ namespace rme
 
 	void RaymarchRenderer::updateUniforms(Scene* scene, Camera* camera)
 	{
+		glUniform1f(timeLocation, float(glfwGetTime()));
 		glUniform2f(rotationLocation, control->xRotation, control->yRotation);
 		glUniform3f(camPosLocation, camera->position.x, camera->position.y, camera->position.z);
-		int size = scene->children.size();
-		glUniform1i(objCountLocation, size);
-		int warps = 0;
-		if (scene->warpA != NULL)
-		{
-			warps++;
-			updateObject3D(warpALoc, scene->warpA);
-		}
-		if (scene->warpB != NULL)
-		{
-			warps++;
-			updateObject3D(warpBLoc, scene->warpB);
-		}
-		glUniform1i(warpCountLoc, warps);
+		//int size = scene->children.size();
+		//glUniform1i(objCountLocation, size);
 
-		for (int i = 0; i < size; i++)
-		{
-			Object3D *currentObj = scene->children[i];
-			shaderObject3D currentLoc = objectLocations[i];
-			updateObject3D(currentLoc, currentObj);
-		}
-
-	}
-
-	void RaymarchRenderer::updateObject3D(shaderObject3D location, Object3D *obj)
-	{
-		glUniform3f(location.position, obj->position.x, obj->position.y, obj->position.z);
-		glUniform3f(location.direction, obj->direction.x, obj->direction.y, obj->direction.z);
-		glUniform1f(location.radius, obj->radius);
-		glUniform1f(location.age, obj->age);
-		glUniform3f(location.shape, obj->shape.x, obj->shape.y, obj->shape.z);
-		glUniform1i(location.geometry, obj->geometry);
-		glUniform1f(location.mass, obj->mass);
-		glUniform3f(location.color, obj->color.x, obj->color.y, obj->color.z);
-		//	glUniform1f(location.shininess, obj->material->shininess);
-		//	glUniform1f(location.luminance, obj->material->luminance);
-
-		//	glUniform1i(location.shading, obj->material->shading);
 	}
 
 	Controls* RaymarchRenderer::getControl()
@@ -272,7 +286,7 @@ namespace rme
 		glDeleteVertexArrays(1, &VAO);
 		glDeleteBuffers(1, &VBO);
 		glDeleteBuffers(1, &EBO);
-		delete objectLocations;
+		delete vertices;
 		// Terminate GLFW, clearing any resources allocated by GLFW.
 		glfwTerminate();
 	}
